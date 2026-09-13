@@ -39,8 +39,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
-      <body className={`${display.variable} ${body.variable} antialiased`}>
+    <html lang="es" suppressHydrationWarning>
+      <body
+        className={`${display.variable} ${body.variable} antialiased`}
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

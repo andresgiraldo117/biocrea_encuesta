@@ -121,7 +121,7 @@ export function SurveyApp() {
     <main className="grain relative mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))]">
       <header className="flex shrink-0 items-center justify-between gap-3 py-3">
         <div className="flex items-center gap-2.5 text-forest">
-          <Logo className="h-11 w-11" />
+          <Logo className="h-12 w-12" />
           <div>
             <p className="text-[0.65rem] font-semibold tracking-[0.22em] text-gold uppercase">
               BIOCREA
