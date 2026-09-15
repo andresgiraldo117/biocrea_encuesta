@@ -2,24 +2,21 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Logo } from "@/components/Logo";
+import { downloadSurveyPdf } from "@/lib/download-report";
+import { buildReport } from "@/lib/report";
 import {
   DURATIONS,
   FORMATS,
   PREVIOUS_EVENTS,
   ROLES,
   TOPICS,
+  labelOf,
   type SurveyRow,
 } from "@/lib/survey";
 import { supabase } from "@/lib/supabase";
 
 const PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "biocrea";
-
-function labelOf(
-  list: readonly { id: string; label: string }[],
-  id: string | null,
-) {
-  return list.find((item) => item.id === id)?.label ?? id ?? "—";
-}
+const UNLOCK_KEY = "biocrea-admin-ok";
 
 export function AdminDashboard() {
   const [pin, setPin] = useState("");
@@ -27,6 +24,8 @@ export function AdminDashboard() {
   const [rows, setRows] = useState<SurveyRow[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [downloading, setDownloading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -54,48 +53,20 @@ export function AdminDashboard() {
       return;
     }
     setUnlocked(true);
+    sessionStorage.setItem(UNLOCK_KEY, "1");
     setError("");
   }
+
+  useEffect(() => {
+    if (sessionStorage.getItem(UNLOCK_KEY) === "1") setUnlocked(true);
+  }, []);
 
   useEffect(() => {
     if (unlocked) void load();
   }, [unlocked]);
 
-  const stats = useMemo(() => {
-    const topicCounts = new Map<string, number>();
-    const roleCounts = new Map<string, number>();
-    const formatCounts = new Map<string, number>();
-    let satisfactionSum = 0;
-    let satisfactionN = 0;
-
-    for (const row of rows) {
-      for (const topic of row.topics ?? []) {
-        topicCounts.set(topic, (topicCounts.get(topic) ?? 0) + 1);
-      }
-      if (row.role) roleCounts.set(row.role, (roleCounts.get(row.role) ?? 0) + 1);
-      if (row.format) formatCounts.set(row.format, (formatCounts.get(row.format) ?? 0) + 1);
-      if (row.satisfaction) {
-        satisfactionSum += row.satisfaction;
-        satisfactionN += 1;
-      }
-    }
-
-    const rankedTopics = TOPICS.map((topic) => ({
-      ...topic,
-      count: topicCounts.get(topic.id) ?? 0,
-    })).sort((a, b) => b.count - a.count);
-
-    const maxTopic = Math.max(1, ...rankedTopics.map((item) => item.count));
-
-    return {
-      rankedTopics,
-      maxTopic,
-      roleCounts,
-      formatCounts,
-      avgSatisfaction: satisfactionN ? satisfactionSum / satisfactionN : 0,
-      satisfactionN,
-    };
-  }, [rows]);
+  const report = useMemo(() => buildReport(rows), [rows]);
+  const stats = report;
 
   if (!unlocked) {
     return (
@@ -125,9 +96,29 @@ export function AdminDashboard() {
           <p className="text-xs font-semibold tracking-[0.2em] text-gold uppercase">BIOCREA</p>
           <h1 className="font-display text-4xl font-semibold">Agenda viva</h1>
         </div>
-        <button onClick={() => void load()} className="rounded-full border border-[var(--line)] bg-white/70 px-4 py-2 text-sm">
-          {loading ? "Cargando..." : "Actualizar"}
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button onClick={() => void load()} className="rounded-full border border-[var(--line)] bg-white/70 px-4 py-2 text-sm">
+            {loading ? "Cargando..." : "Actualizar"}
+          </button>
+          <a href="/admin/informe" className="rounded-full border border-[var(--line)] bg-white/70 px-4 py-2 text-sm">
+            Ver informe
+          </a>
+          <button
+            type="button"
+            disabled={downloading}
+            onClick={async () => {
+              setDownloading(true);
+              try {
+                await downloadSurveyPdf(report);
+              } finally {
+                setDownloading(false);
+              }
+            }}
+            className="rounded-full bg-forest px-4 py-2 text-sm font-semibold text-[#f6f0e6] disabled:opacity-40"
+          >
+            {downloading ? "Preparando..." : "Descargar PDF"}
+          </button>
+        </div>
       </header>
 
       {error ? <p className="mb-4 text-sm text-red-800">{error}</p> : null}
@@ -136,7 +127,7 @@ export function AdminDashboard() {
         <Stat label="Respuestas" value={String(rows.length)} />
         <Stat
           label="Satisfacción"
-          value={stats.satisfactionN ? stats.avgSatisfaction.toFixed(1) : "—"}
+          value={stats.avgSatisfaction ? stats.avgSatisfaction.toFixed(1) : "—"}
         />
       </section>
 
@@ -154,7 +145,9 @@ export function AdminDashboard() {
               <div className="h-2 overflow-hidden rounded-full bg-paper-deep">
                 <div
                   className="h-full rounded-full bg-forest"
-                  style={{ width: `${(topic.count / stats.maxTopic) * 100}%` }}
+                  style={{
+                    width: `${(topic.count / Math.max(1, ...stats.rankedTopics.map((item) => item.count))) * 100}%`,
+                  }}
                 />
               </div>
             </div>
@@ -163,8 +156,8 @@ export function AdminDashboard() {
       </section>
 
       <section className="mb-8 grid gap-3 sm:grid-cols-2">
-        <Breakdown title="Roles" counts={stats.roleCounts} labels={ROLES} />
-        <Breakdown title="Formato" counts={stats.formatCounts} labels={FORMATS} />
+        <Breakdown title="Roles" items={stats.roles} />
+        <Breakdown title="Formato" items={stats.formats} />
       </section>
 
       <section>
@@ -221,21 +214,19 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function Breakdown({
   title,
-  counts,
-  labels,
+  items,
 }: {
   title: string;
-  counts: Map<string, number>;
-  labels: readonly { id: string; label: string }[];
+  items: { id: string; label: string; count: number }[];
 }) {
   return (
     <div className="rounded-[1.4rem] border border-[var(--line)] bg-white/65 p-4">
       <h2 className="mb-3 text-sm font-semibold tracking-wide uppercase">{title}</h2>
       <ul className="space-y-1.5 text-sm">
-        {labels.map((item) => (
+        {items.map((item) => (
           <li key={item.id} className="flex justify-between gap-3">
             <span>{item.label}</span>
-            <span className="text-ink-soft">{counts.get(item.id) ?? 0}</span>
+            <span className="text-ink-soft">{item.count}</span>
           </li>
         ))}
       </ul>

@@ -38,7 +38,10 @@ create policy "public_read_survey"
   on public.survey_responses
   for select
   to anon, authenticated
-  using (true);`;
+  using (true);
+
+grant usage on schema public to anon, authenticated;
+grant insert, select on table public.survey_responses to anon, authenticated;`;
 
 export default function SetupPage() {
   const [copied, setCopied] = useState(false);

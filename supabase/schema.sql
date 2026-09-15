@@ -37,3 +37,6 @@ create policy "public_read_survey"
   for select
   to anon, authenticated
   using (true);
+
+grant usage on schema public to anon, authenticated;
+grant insert, select on table public.survey_responses to anon, authenticated;

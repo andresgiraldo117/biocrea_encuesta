@@ -312,12 +312,12 @@ export function SurveyApp() {
               className="mt-2.5 h-12 w-full rounded-2xl border border-[var(--line)] bg-white/70 px-4 outline-none focus:border-forest"
             />
             {error ? (
-              <p className="mt-3 text-sm text-red-800">
-                {error}{" "}
-                <a className="underline" href="/setup">
-                  Ver instrucciones
+              <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+                <p>{error}</p>
+                <a href="/setup" className="mt-2 inline-block font-semibold underline">
+                  Abrir instrucciones y crear la tabla
                 </a>
-              </p>
+              </div>
             ) : null}
           </Question>
         ) : null}

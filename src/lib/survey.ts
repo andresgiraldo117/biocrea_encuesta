@@ -112,6 +112,14 @@ export const DURATIONS = [
 
 export const MAX_TOPICS = 5;
 
+export function labelOf(
+  list: readonly { id: string; label: string }[],
+  id: string | null | undefined,
+) {
+  if (!id) return "—";
+  return list.find((item) => item.id === id)?.label ?? id;
+}
+
 export type SurveyDraft = {
   role: string;
   previousEvent: string;

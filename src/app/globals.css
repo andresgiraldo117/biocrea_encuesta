@@ -18,6 +18,7 @@
   --color-ink-soft: var(--ink-soft);
   --color-forest: var(--forest);
   --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
   --font-display: var(--font-cormorant);
   --font-sans: var(--font-outfit);
 }
@@ -103,4 +104,20 @@ textarea {
 .cta:disabled {
   opacity: 0.38;
   box-shadow: none;
+}
+
+@media print {
+  body {
+    background: white !important;
+    background-image: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .informe {
+    box-shadow: none !important;
+    max-width: none !important;
+  }
 }
