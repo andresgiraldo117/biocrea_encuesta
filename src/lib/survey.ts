@@ -1,3 +1,10 @@
+export type ChoiceOption = {
+  id: string;
+  label: string;
+  hint?: string;
+  badge?: string;
+};
+
 export const ROLES = [
   { id: "veterinario", label: "Médico veterinario" },
   { id: "estudiante", label: "Estudiante de MV" },
@@ -7,7 +14,7 @@ export const ROLES = [
   { id: "otro", label: "Otro" },
 ] as const;
 
-export const PREVIOUS_EVENTS = [
+export const PREVIOUS_EVENTS: readonly ChoiceOption[] = [
   { id: "neonatologia", label: "Sí, el congreso de neonatología" },
   {
     id: "fisioterapia",
@@ -16,7 +23,7 @@ export const PREVIOUS_EVENTS = [
   },
   { id: "otro-evento", label: "Sí, otro curso o evento BIOCREA" },
   { id: "ninguno", label: "Aún no he participado" },
-] as const satisfies readonly { id: string; label: string; badge?: string }[];
+];
 
 export const TOPICS = [
   {
