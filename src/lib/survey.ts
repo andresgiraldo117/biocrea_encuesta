@@ -9,6 +9,7 @@ export const ROLES = [
 
 export const PREVIOUS_EVENTS = [
   { id: "neonatologia", label: "Sí, el congreso de neonatología" },
+  { id: "fisioterapia", label: "Sí, el curso de fisioterapia y rehabilitación" },
   { id: "otro-evento", label: "Sí, otro curso o evento BIOCREA" },
   { id: "ninguno", label: "Aún no he participado" },
 ] as const;
