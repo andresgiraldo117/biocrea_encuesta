@@ -5,7 +5,7 @@ import { InformeDocument } from "@/components/InformeDocument";
 import { Logo } from "@/components/Logo";
 import { downloadSurveyPdf } from "@/lib/download-report";
 import { buildReport } from "@/lib/report";
-import { supabase } from "@/lib/supabase";
+import { loadSurveys } from "@/lib/survey-client";
 import type { SurveyRow } from "@/lib/survey";
 
 const PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "biocrea";
@@ -26,17 +26,15 @@ export function InformeView() {
   useEffect(() => {
     if (!unlocked) return;
     setLoading(true);
-    void supabase
-      .from("survey_responses")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data, error: queryError }) => {
+    void loadSurveys(PIN)
+      .then((data) => {
+        setRows(data);
+      })
+      .catch((queryError: unknown) => {
+        setError(queryError instanceof Error ? queryError.message : "No se pudieron cargar las respuestas.");
+      })
+      .finally(() => {
         setLoading(false);
-        if (queryError) {
-          setError(queryError.message);
-          return;
-        }
-        setRows((data ?? []) as SurveyRow[]);
       });
   }, [unlocked]);
 

@@ -13,7 +13,7 @@ import {
   labelOf,
   type SurveyRow,
 } from "@/lib/survey";
-import { supabase } from "@/lib/supabase";
+import { loadSurveys } from "@/lib/survey-client";
 
 const PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? "biocrea";
 const UNLOCK_KEY = "biocrea-admin-ok";
@@ -30,20 +30,14 @@ export function AdminDashboard() {
   async function load() {
     setLoading(true);
     setError("");
-    const { data, error: queryError } = await supabase
-      .from("survey_responses")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setLoading(false);
-    if (queryError) {
-      setError(
-        queryError.message.includes("Could not find the table")
-          ? "Crea la tabla con supabase/schema.sql en el SQL Editor de Supabase."
-          : queryError.message,
-      );
-      return;
+    try {
+      const data = await loadSurveys(PIN);
+      setRows(data);
+    } catch (queryError) {
+      setError(queryError instanceof Error ? queryError.message : "No se pudieron cargar las respuestas.");
+    } finally {
+      setLoading(false);
     }
-    setRows((data ?? []) as SurveyRow[]);
   }
 
   function unlock(event: FormEvent) {

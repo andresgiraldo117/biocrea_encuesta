@@ -12,7 +12,7 @@ import {
   emptyDraft,
   type SurveyDraft,
 } from "@/lib/survey";
-import { supabase } from "@/lib/supabase";
+import { submitSurvey } from "@/lib/survey-client";
 
 const STEPS = [
   "bienvenida",
@@ -77,32 +77,27 @@ export function SurveyApp() {
     setSending(true);
     setError("");
 
-    const { error: insertError } = await supabase.from("survey_responses").insert({
-      role: draft.role,
-      previous_event: draft.previousEvent,
-      satisfaction: draft.previousEvent === "ninguno" ? null : draft.satisfaction,
-      topics: draft.topics,
-      other_topic: draft.otherTopic.trim() || null,
-      format: draft.format,
-      duration: draft.duration,
-      comment: draft.comment.trim() || null,
-      name: draft.name.trim() || null,
-      contact: draft.contact.trim() || null,
-      user_agent: navigator.userAgent,
-    });
-
-    setSending(false);
-
-    if (insertError) {
-      const missingTable = /could not find the table|schema cache/i.test(insertError.message);
-      setError(
-        missingTable
-          ? "Falta crear la tabla en Supabase. Abre /setup y ejecuta el SQL."
-          : insertError.message,
-      );
+    try {
+      await submitSurvey({
+        role: draft.role,
+        previous_event: draft.previousEvent,
+        satisfaction: draft.previousEvent === "ninguno" ? null : draft.satisfaction,
+        topics: draft.topics,
+        other_topic: draft.otherTopic.trim() || null,
+        format: draft.format,
+        duration: draft.duration,
+        comment: draft.comment.trim() || null,
+        name: draft.name.trim() || null,
+        contact: draft.contact.trim() || null,
+        user_agent: navigator.userAgent,
+      });
+    } catch (submitError) {
+      setSending(false);
+      setError(submitError instanceof Error ? submitError.message : "No se pudo guardar la respuesta.");
       return;
     }
 
+    setSending(false);
     go("gracias");
   }
 
@@ -318,9 +313,6 @@ export function SurveyApp() {
             {error ? (
               <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
                 <p>{error}</p>
-                <a href="/setup" className="mt-2 inline-block font-semibold underline">
-                  Abrir instrucciones y crear la tabla
-                </a>
               </div>
             ) : null}
           </Question>
