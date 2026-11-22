@@ -166,7 +166,11 @@ export function SurveyApp() {
             hint="Incluye el congreso de neonatología y el curso de fisioterapia y rehabilitación."
           >
             <ChoiceList
-              options={PREVIOUS_EVENTS.map((item) => ({ id: item.id, label: item.label }))}
+              options={PREVIOUS_EVENTS.map((item) => ({
+                id: item.id,
+                label: item.label,
+                badge: item.badge,
+              }))}
               value={draft.previousEvent}
               onChange={(previousEvent) =>
                 setDraft((current) => ({ ...current, previousEvent }))
@@ -414,30 +418,42 @@ function ChoiceList({
   value,
   onChange,
 }: {
-  options: { id: string; label: string; hint?: string }[];
+  options: { id: string; label: string; hint?: string; badge?: string }[];
   value: string;
   onChange: (id: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-2.5">
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          data-selected={value === option.id}
-          onClick={() => onChange(option.id)}
-          className="choice flex w-full flex-col items-start justify-center rounded-2xl px-4 py-3 text-left"
-        >
-          <span className="font-medium">{option.label}</span>
-          {option.hint ? (
-            <span
-              className={`text-sm ${value === option.id ? "text-white/70" : "text-ink-soft"}`}
-            >
-              {option.hint}
+      {options.map((option) => {
+        const selected = value === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            data-selected={selected}
+            onClick={() => onChange(option.id)}
+            className="choice flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left"
+          >
+            <span className="flex min-w-0 flex-1 flex-col items-start">
+              <span className="font-medium">{option.label}</span>
+              {option.hint ? (
+                <span className={`text-sm ${selected ? "text-white/70" : "text-ink-soft"}`}>
+                  {option.hint}
+                </span>
+              ) : null}
             </span>
-          ) : null}
-        </button>
-      ))}
+            {option.badge ? (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[0.62rem] font-semibold tracking-[0.12em] uppercase ${
+                  selected ? "bg-[#f6f0e6]/18 text-gold-soft" : "bg-gold/15 text-gold"
+                }`}
+              >
+                {option.badge}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
     </div>
   );
 }
