@@ -163,7 +163,7 @@ export function SurveyApp() {
         {step === "evento" ? (
           <Question
             title="¿Has estado en un evento BIOCREA?"
-            hint="Acabamos de cerrar el congreso de neonatología."
+            hint="Incluye el congreso de neonatología y el curso de fisioterapia y rehabilitación."
           >
             <ChoiceList
               options={PREVIOUS_EVENTS.map((item) => ({ id: item.id, label: item.label }))}
